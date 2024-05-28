@@ -1,7 +1,7 @@
 Attribute VB_Name = "LibCore"
 '===============================================================================
 '   Модуль          : LibCore
-'   Версия          : 2024.05.24
+'   Версия          : 2024.05.28
 '   Автор           : elvin-nsk (me@elvin.nsk.ru)
 '   Использован код : dizzy (из макроса CtC), Alex Vakulenko
 '                     и др.
@@ -228,7 +228,7 @@ Public Property Get DiffWithinTolerance( _
                         ByVal Number2 As Variant, _
                         ByVal Tolerance As Variant _
                     ) As Boolean
-    DiffWithinTolerance = VBA.Abs(Number1 - Number2) <= Tolerance
+    DiffWithinTolerance = Abs(Number1 - Number2) <= Tolerance
 End Property
 
 'возвращает все шейпы на всех слоях текущей страницы, по умолчанию - без мастер-слоёв и без гайдов
@@ -822,8 +822,8 @@ Public Property Get NumberToFitArea( _
                         ByVal BoxToFit As Rect, _
                         ByVal Area As Rect _
                     ) As Long
-    NumberToFitArea = VBA.Fix(Area.Width / BoxToFit.Width) _
-                    * VBA.Fix(Area.Height / BoxToFit.Height)
+    NumberToFitArea = Fix(Area.Width / BoxToFit.Width) _
+                    * Fix(Area.Height / BoxToFit.Height)
 End Property
 
 Public Property Get PixelsToDocUnits(ByVal SizeInPixels As Long) As Double
@@ -1674,6 +1674,28 @@ Public Sub BoostFinish(Optional ByVal EndUndoGroup As Boolean = True)
     Application.Refresh
     Application.Windows.Refresh
 End Sub
+
+'находит ближайшее к Value число, которое делится на Divisor без остатка
+Public Property Get ClosestDividend( _
+                        ByVal InitialDividend As Double, _
+                        ByVal Divisor As Double _
+                    ) As Double
+    Dim q As Long: q = Fix(InitialDividend / Divisor)
+    Dim n1 As Double: n1 = Divisor * q
+
+    Dim n2 As Double
+    If (InitialDividend * Divisor) > 0 Then
+        n2 = Divisor * (q + 1)
+    Else
+        n2 = Divisor * (q - 1)
+    End If
+
+    If Abs(InitialDividend - n1) < Abs(InitialDividend - n2) Then
+        ClosestDividend = n1
+    Else
+        ClosestDividend = n2
+    End If
+End Property
 
 Public Property Get Contains( _
                         ByRef ContainerSeq As Variant, _

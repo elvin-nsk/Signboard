@@ -22,16 +22,71 @@ Public Const APP_URL As String = "https://vk.com/elvin_macro/" & APP_NAME
 '===============================================================================
 ' # Globals
 
-Private Const TOP_HOLE_SIZE As Double = 4.2
-Private Const BOTTOM_HOLE_SIZE As Double = 8
 Private Const GROOVE_SIZE As Double = 3.2
 Private Const GROOVE_PROBE_LENGTH As Double = GROOVE_SIZE * 4
-Private Const BEAM_THICKNESS As Double = 20
-Private Const CONVEXITY_FACTOR As Double = 0.65
 
+'0.01 - 1, чем больше - тем более вогнутым должен быть угол
+'для появления на нём засечек
+Private Const CONCAVITY_MULT As Double = 0.65
+
+Private Const HOLES_STEP As Double = 10
+Private Const TOP_HOLE_SIZE As Double = 4.2
+Private Const TOP_HOLE_STEP As Double = 5
+Private Const TOP_HOLE_EDGE_SPACE As Double = HOLES_STEP
+Private Const BOTTOM_HOLE_SIZE As Double = 8
+Private Const BOTTOM_HOLE_EDGE_SPACE As Double = HOLES_STEP
+Private Const PROBE_CIRCLE_MULT As Double = 0.8
+'Private Const BEAM_THICKNESS As Double = 20
+
+Private Const PROBE_STEPS As Long = 36
+
+Type Beams
+    TopBeam As Shape
+    BottomBeam As Shape
+    AllBeams As ShapeRange
+    Some As Boolean
+End Type
+
+Type MaybePoint
+    Point As Point
+    Some As Boolean
+End Type
 
 '===============================================================================
 ' # Entry points
+
+Sub Holes()
+
+    #If DebugMode = 0 Then
+    On Error GoTo Catch
+    #End If
+       
+    Dim Shapes As ShapeRange
+    With InputData.RequestDocumentOrPage
+        If .IsError Then GoTo Finally
+        Set Shapes = .Shapes
+    End With
+    
+    Dim Source As ShapeRange
+    Set Source = ActiveSelectionRange
+    Dim ShapeSize As Double
+    ShapeSize = 90
+    
+    BoostStart "Holes"
+    
+    MakeHoles Shapes, ShapeSize
+    
+    Source.CreateSelection
+    
+Finally:
+    BoostFinish
+    Exit Sub
+
+Catch:
+    VBA.MsgBox VBA.Err.Source & ": " & VBA.Err.Description, vbCritical, "Error"
+    Resume Finally
+
+End Sub
 
 Sub Grooves()
 
@@ -67,6 +122,135 @@ End Sub
 '===============================================================================
 ' # Helpers
 
+Private Sub MakeHoles(ByVal Shapes As ShapeRange, ByVal ShapeSize As Double)
+    Dim ShapesToProcess As New ShapeRange
+    ShapesToProcess.AddRange Shapes
+    Dim Beams As Beams: Beams = FindBeams(Shapes)
+    If Not Beams.Some Then Exit Sub
+    ShapesToProcess.RemoveRange Beams.AllBeams
+    If ShapesToProcess.Count = 0 Then Throw "Нет объектов"
+    
+    '''
+    'Debug.Print Beams.Some
+    'Debug.Print ShapesToProcess.Count
+    '''
+    
+    ShapesToProcess.Sort "@Shape1.Left < @Shape2.Left"
+    Dim ProbeRadius As Double: ProbeRadius = GetProbeRadius(ShapeSize)
+    MakeTopHoles Beams.TopBeam, ShapesToProcess, ShapeSize, ProbeRadius
+    MakeBottomHoles Beams.BottomBeam, ShapesToProcess, ShapeSize, ProbeRadius
+
+End Sub
+
+Private Sub MakeTopHoles( _
+                ByVal Beam As Shape, _
+                ByVal ShapesToProcess As ShapeRange, _
+                ByVal ShapeSize As Double, _
+                ByVal ProbeRadius As Double _
+            )
+    Dim Shape As Shape
+    For Each Shape In ShapesToProcess
+        MakeTopHolesInShape Beam, Shape, ProbeRadius
+    Next Shape
+End Sub
+
+Private Sub MakeTopHolesInShape( _
+                ByVal Beam As Shape, _
+                ByVal Shape As Shape, _
+                ByVal ProbeRadius As Double _
+            )
+    With NextValidPoint( _
+            Beam, Shape, Point.New_(Shape.LeftX + ProbeRadius, Beam.CenterY), _
+            HOLES_STEP, ProbeRadius, TOP_HOLE_EDGE_SPACE _
+        )
+        If .Some Then MakeTopCircle .Point
+    End With
+    If Shape.SizeWidth > ProbeRadius * 4 Then
+        With NextValidPoint( _
+                Beam, Shape, Point.New_(Shape.RightX - ProbeRadius, Beam.CenterY), _
+                -HOLES_STEP, ProbeRadius, TOP_HOLE_EDGE_SPACE _
+            )
+            If .Some Then MakeTopCircle .Point
+        End With
+    End If
+End Sub
+
+Private Sub MakeTopCircle(ByVal Center As Point)
+    MakeCircle _
+        Center, TOP_HOLE_SIZE / 2, _
+        OutlineColor:=CreateCMYKColor(100, 0, 0, 0)
+End Sub
+
+Private Sub MakeBottomHoles( _
+                ByVal Beam As Shape, _
+                ByVal ShapesToProcess As ShapeRange, _
+                ByVal ShapeSize As Double, _
+                ByVal ProbeRadius As Double _
+            )
+    Dim Shape As Shape
+    For Each Shape In ShapesToProcess
+        MakeBottomHoleInShape Beam, Shape, ProbeRadius
+    Next Shape
+End Sub
+
+Private Sub MakeBottomHoleInShape( _
+                ByVal Beam As Shape, _
+                ByVal Shape As Shape, _
+                ByVal ProbeRadius As Double _
+            )
+    Dim StartingPoint As Point: Set StartingPoint = _
+        Point.New_(ClosestDividend(Shape.CenterX, HOLES_STEP), Beam.CenterY)
+    With NextValidPoint( _
+            Beam, Shape, StartingPoint, HOLES_STEP, ProbeRadius, _
+            BOTTOM_HOLE_EDGE_SPACE _
+        )
+        If .Some Then
+            MakeBottomCircle .Point
+            Exit Sub
+        Else
+            With NextValidPoint( _
+                Beam, Shape, StartingPoint, -HOLES_STEP, ProbeRadius, _
+                BOTTOM_HOLE_EDGE_SPACE _
+            )
+                If .Some Then MakeBottomCircle .Point
+            End With
+        End If
+    End With
+End Sub
+
+Private Sub MakeBottomCircle(ByVal Center As Point)
+    MakeCircle _
+        Center, BOTTOM_HOLE_SIZE / 2, _
+        OutlineColor:=CreateCMYKColor(100, 0, 100, 0)
+End Sub
+
+Private Property Get FindBeams(ByVal Shapes As ShapeRange) As Beams
+    Dim Shape As Shape
+    With FindBeams
+        Set .AllBeams = CreateShapeRange
+        For Each Shape In Shapes
+            If Shape.Outline.Color.IsSame(CreateCMYKColor(0, 0, 100, 0)) Then
+               .AllBeams.Add Shape
+            End If
+        Next Shape
+        If .AllBeams.Count <> 2 Then Exit Property
+        If .AllBeams.Shapes(1).TopY > .AllBeams.Shapes(2).TopY Then
+            Set .TopBeam = .AllBeams.Shapes(1)
+            Set .BottomBeam = .AllBeams.Shapes(2)
+        Else
+            Set .TopBeam = .AllBeams.Shapes(2)
+            Set .BottomBeam = .AllBeams.Shapes(1)
+        End If
+        .Some = True
+    End With
+End Property
+
+Private Property Get GetProbeRadius(ByVal ShapeSize As Double) As Double
+    GetProbeRadius = ShapeSize * PROBE_CIRCLE_MULT / 2
+End Property
+
+'-------------------------------------------------------------------------------
+
 Private Sub MakeGrooves(ByVal Shapes As ShapeRange)
     Dim Shape As Shape
     For Each Shape In Shapes
@@ -101,19 +285,11 @@ Private Sub MakeGroovesOnNode(ByVal Node As Node)
 End Sub
 
 Private Function MakeGroovePunch() As Shape
-    Dim Result As Shape
-    Set Result = _
-        ActiveLayer.CreateRectangle2(0, 0, GROOVE_PROBE_LENGTH, GROOVE_SIZE)
-    With Result.Rectangle
-        .CornerType = cdrCornerTypeRound
-        '.SetRoundness 100 не работает, поэтому так
-        .CornerLowerLeft = 100
-        .CornerLowerRight = 100
-        .CornerUpperLeft = 100
-        .CornerUpperRight = 100
-    End With
-    Result.Outline.Color.CMYKAssign 0, 100, 0, 0
-    Set MakeGroovePunch = Result
+    Set MakeGroovePunch = _
+        MakePunch( _
+            GROOVE_PROBE_LENGTH, GROOVE_SIZE, _
+            OutlineColor:=CreateCMYKColor(0, 100, 0, 0) _
+        )
 End Function
 
 Private Property Get AngleOutside(ByVal Node As Node) As Double
@@ -128,25 +304,16 @@ Private Property Get AngleOutside(ByVal Node As Node) As Double
 End Property
 
 Private Property Get IsNodeConvex(ByVal Node As Node) As Boolean
-    Const Step As Long = 10
-    Const MaxHits As Long = 36
-    Dim Probe As Point: Set Probe = _
-        Point.New_(Node.PositionX + GROOVE_PROBE_LENGTH, Node.PositionY)
-    Dim Pivot As Point: Set Pivot = Point.New_(Node.PositionX, Node.PositionY)
+    Const MaxHits As Long = PROBE_STEPS
     Dim Hits As Long
-    Dim a As Double
-    For a = Step To MaxHits * Step Step Step 'всего MaxHits итераций
-        Probe.RotateAroundPoint Pivot, Step
-        If PointIsInside(Probe, Node.Parent) Then Hits = Hits + 1
-    Next a
-    If Hits < MaxHits * CONVEXITY_FACTOR Then IsNodeConvex = True
-End Property
-
-Private Property Get PointIsInside( _
-                         ByVal Point As Point, _
-                         ByVal Curve As Curve _
-                     ) As Boolean
-    PointIsInside = Curve.IsPointInside(Point.x, Point.y)
+    Hits = _
+        ProbeHits( _
+            Node.Parent, _
+            Point.New_(Node.PositionX, Node.PositionY), _
+            GROOVE_SIZE / 2, _
+            MaxHits _
+        )
+    If Hits < MaxHits * CONCAVITY_MULT Then IsNodeConvex = True
 End Property
 
 Private Sub MakeVectors(ByVal Node As Node)
@@ -170,6 +337,96 @@ Private Property Get Probe( _
     Probe.RotateAroundPoint StartingPoint, Angle
 End Property
 
+'-------------------------------------------------------------------------------
+' # Common
+
+Private Function MakeCircle( _
+                     ByVal Center As Point, _
+                     ByVal Radius As Double, _
+                     Optional ByVal FillColor As Color, _
+                     Optional ByVal OutlineColor As Color _
+                 ) As Shape
+    Set MakeCircle = _
+        ActiveLayer.CreateEllipse2(Center.x, Center.y, Radius)
+    If IsSome(FillColor) Then MakeCircle.Fill.ApplyUniformFill FillColor
+    If IsSome(OutlineColor) Then MakeCircle.Outline.Color.CopyAssign OutlineColor
+End Function
+
+Private Function MakePunch( _
+                     ByVal Width As Double, _
+                     ByVal Height As Double, _
+                     Optional ByVal FillColor As Color, _
+                     Optional ByVal OutlineColor As Color _
+                 ) As Shape
+    Set MakePunch = _
+        ActiveLayer.CreateRectangle2(0, 0, Width, Height)
+    With MakePunch.Rectangle
+        .CornerType = cdrCornerTypeRound
+        '.SetRoundness 100 не работает, поэтому так
+        .CornerLowerLeft = 100
+        .CornerLowerRight = 100
+        .CornerUpperLeft = 100
+        .CornerUpperRight = 100
+    End With
+    If IsSome(FillColor) Then MakePunch.Fill.ApplyUniformFill FillColor
+    If IsSome(OutlineColor) Then MakePunch.Outline.Color.CopyAssign OutlineColor
+End Function
+
+Private Property Get ProbeHits( _
+                         ByVal ClosedCurve As Curve, _
+                         ByVal Center As Point, _
+                         ByVal Radius As Double, _
+                         ByVal ProbeSteps As Long _
+                     ) As Long
+    Dim Step As Double: Step = 360 / ProbeSteps
+    Dim Probe As Point: Set Probe = _
+        Point.New_(Center.x + Radius, Center.y)
+    Dim Angle As Double
+    For Angle = Step To 360 Step Step
+        Probe.RotateAroundPoint Center, Step
+        If PointIsInside(Probe, ClosedCurve) Then ProbeHits = ProbeHits + 1
+    Next Angle
+End Property
+
+Private Property Get PointIsInside( _
+                         ByVal Point As Point, _
+                         ByVal Curve As Curve _
+                     ) As Boolean
+    PointIsInside = Curve.IsPointInside(Point.x, Point.y)
+End Property
+
+Private Property Get NextValidPoint( _
+                         ByVal Beam As Shape, _
+                         ByVal Shape As Shape, _
+                         ByVal StartingPoint As Point, _
+                         ByVal Step As Double, _
+                         ByVal Radius As Double, _
+                         ByVal BeamEdgeSpace As Double _
+                     ) As MaybePoint
+    Const Hits As Long = 36
+    Dim LastPoint As Point: Set LastPoint = StartingPoint.GetCopy
+    
+    Do While LastPoint.x < Shape.RightX _
+         And LastPoint.x > Shape.LeftX
+         
+        If LastPoint.x < Shape.RightX - Radius _
+       And LastPoint.x > Shape.LeftX + Radius _
+       And LastPoint.x <= Beam.RightX - BeamEdgeSpace _
+       And LastPoint.x >= Beam.LeftX + BeamEdgeSpace Then
+            If _
+                ProbeHits( _
+                    Shape.Curve, _
+                    LastPoint, Radius, Hits _
+                ) = Hits _
+            Then
+                Set NextValidPoint.Point = LastPoint
+                NextValidPoint.Some = True
+                Exit Property
+            End If
+        End If
+        LastPoint.Move Step
+    Loop
+End Property
 
 '===============================================================================
 ' # Tests
@@ -218,4 +475,32 @@ Private Sub SetAngleOld(ByVal Node As Node)
             ActiveLayer.CreateArtisticText .ControlPoint1.x, .ControlPoint1.y, Fix(.Angle1)
             ActiveLayer.CreateArtisticText .ControlPoint2.x, .ControlPoint2.y, Fix(.Angle2)
     End With
+End Sub
+
+Private Sub MakeBottomHoleInShapeOld( _
+                ByVal Beam As Shape, _
+                ByVal Shape As Shape, _
+                ByVal ProbeRadius As Double, _
+                ByVal y As Double, _
+                ByRef LastPosition As Double _
+            )
+    Const Hits As Long = 36
+    Do While LastPosition + ProbeRadius < Shape.RightX
+        If LastPosition - ProbeRadius > Shape.LeftX _
+       And LastPosition > Beam.LeftX _
+       And LastPosition <= Beam.RightX - BOTTOM_HOLE_EDGE_SPACE Then
+            If _
+                ProbeHits( _
+                    Shape.Curve, Point.New_(LastPosition, y), ProbeRadius, Hits _
+                ) = Hits _
+            Then
+                MakeCircle _
+                    Point.New_(LastPosition, y), _
+                    BOTTOM_HOLE_SIZE / 2, _
+                    OutlineColor:=CreateCMYKColor(100, 0, 100, 0)
+                Exit Sub
+            End If
+        End If
+        LastPosition = LastPosition + HOLES_STEP
+    Loop
 End Sub
