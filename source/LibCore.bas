@@ -1,7 +1,7 @@
 Attribute VB_Name = "LibCore"
 '===============================================================================
 '   Модуль          : LibCore
-'   Версия          : 2024.05.28
+'   Версия          : 2024.06.02
 '   Автор           : elvin-nsk (me@elvin.nsk.ru)
 '   Использован код : dizzy (из макроса CtC), Alex Vakulenko
 '                     и др.
@@ -1697,6 +1697,16 @@ Public Property Get ClosestDividend( _
     End If
 End Property
 
+Public Property Get Collection( _
+                        ParamArray Elements() As Variant _
+                    ) As VBA.Collection
+    Set Collection = New VBA.Collection
+    Dim Element As Variant
+    For Each Element In Elements
+        Collection.Add Element
+    Next Element
+End Property
+
 Public Property Get Contains( _
                         ByRef ContainerSeq As Variant, _
                         ByRef Item As Variant _
@@ -1957,7 +1967,7 @@ Public Property Get ObjectAssigned(ByRef Variable As Variant) As Boolean
     ObjectAssigned = Not Variable Is Nothing
 End Property
 
-Public Property Get Pack(ParamArray Items() As Variant) As Variant()
+Public Property Get Pack(ParamArray Items() As Variant) As Variant
     Dim Length As Long
     Length = UBound(Items) - LBound(Items) + 1
     If Length = 0 Then
