@@ -20,8 +20,6 @@ Public Const APP_URL As String = "https://vk.com/elvin_macro/" & APP_NAME
 '===============================================================================
 ' # Globals
 
-Public Const PROBE_RADIUS As Double = GROOVE_SIZE / 10
-
 Public Const GROOVE_SIZE As Double = 3.2
 Public Const GROOVE_PUNCH_LENGTH As Double = GROOVE_SIZE * 4
 Public Const GROOVE_COLOR As String = "CMYK,USER,0,100,0,0"
@@ -30,6 +28,7 @@ Public Const GROOVE_NAME As String = "INNER_PUNCH"
 '0 ... 1, чем больше - тем более вогнутым должен быть угол
 'для появления на нём засечек
 Public Const CONCAVITY_MULT As Double = 0.6
+Public Const PROBE_RADIUS As Double = GROOVE_SIZE / 10
 
 Public Const HOLES_STEP As Double = 10
 Public Const TOP_HOLE_SIZE As Double = 4.2
