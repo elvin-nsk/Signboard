@@ -52,6 +52,7 @@ End Sub
 Private Sub MakeTopCircle(ByVal Center As Point)
     MakeCircle _
         Center, TOP_HOLE_SIZE / 2, _
-        OutlineColor:=CreateCMYKColor(100, 0, 0, 0)
+        OutlineColor:=CreateColor(TOP_HOLE_COLOR), _
+        Name:=TOP_HOLE_NAME
 End Sub
 

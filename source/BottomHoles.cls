@@ -54,5 +54,6 @@ End Sub
 Private Sub MakeBottomCircle(ByVal Center As Point)
     MakeCircle _
         Center, BOTTOM_HOLE_SIZE / 2, _
-        OutlineColor:=CreateCMYKColor(100, 0, 100, 0)
+        OutlineColor:=CreateColor(BOTTOM_HOLE_COLOR), _
+        Name:=BOTTOM_HOLE_NAME
 End Sub

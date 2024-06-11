@@ -30,6 +30,7 @@ End Sub
 Private Sub MakeBottomPunch( _
                 ByVal Shape As Shape _
             )
+    Dim Color As Color: Set Color = CreateColor(BOTTOM_GROOVE_COLOR)
     Dim x As Double, x1 As Variant, x2 As Variant
     Dim y As Double: y = Shape.BottomY
     For x = Shape.LeftX To Shape.RightX Step BOTTOM_GROOVE_STEP
@@ -46,11 +47,11 @@ Private Sub MakeBottomPunch( _
     x = x1 + (x2 - x1) / 2
     With MakePunch( _
             BOTTOM_GROOVE_PUNCH_LENGTH, BOTTOM_GROOVE_SIZE, _
-            OutlineColor:=CreateCMYKColor(0, 100, 100, 0) _
+            OutlineColor:=Color, _
+            Name:=BOTTOM_GROOVE_NAME _
         )
         .Rotate -90
         .CenterX = x
         .TopY = y + BOTTOM_GROOVE_SIZE
     End With
 End Sub
-

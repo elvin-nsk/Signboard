@@ -1,7 +1,7 @@
 Attribute VB_Name = "LibCore"
 '===============================================================================
 '   Модуль          : LibCore
-'   Версия          : 2024.06.02
+'   Версия          : 2024.06.11
 '   Автор           : elvin-nsk (me@elvin.nsk.ru)
 '   Использован код : dizzy (из макроса CtC), Alex Vakulenko
 '                     и др.
@@ -142,9 +142,10 @@ Public Property Get FindShapesByNamePart( _
                         ByVal Shapes As ShapeRange, _
                         ByVal NamePart As String _
                     ) As ShapeRange
-    Set FindShapesByNamePart = FindAllShapes(Shapes).Shapes.FindShapes( _
-                                   Query:="@Name.Contains('" & NamePart & "')" _
-                               )
+    Set FindShapesByNamePart = _
+        FindAllShapes(Shapes).Shapes.FindShapes( _
+            Query:="@Name.Contains('" & NamePart & "')" _
+        )
 End Property
 
 Public Property Get FindShapesByOutlineColor( _
@@ -1324,10 +1325,28 @@ Public Function MoveToLayer( _
 
 End Function
 
+Public Sub NameShapes(ByVal Shapes As ShapeRange, ByVal Name As String)
+    Dim Shape As Shape
+    For Each Shape In Shapes
+        Shape.Name = Name
+    Next Shape
+End Sub
+
 Public Sub ResizeImageToDocumentResolution(ByVal ImageShape As Shape)
     With ImageShape.Bitmap
         ImageShape.SetSize _
             PixelsToDocUnits(.SizeWidth), PixelsToDocUnits(.SizeHeight)
+    End With
+End Sub
+
+Public Sub ResizePageToShapes( _
+               Optional ByVal SideMult As Double = 1, _
+               Optional ByVal SideAdd As Double = 0 _
+            )
+    With ActivePage
+        .SetSize .Shapes.All.SizeWidth * SideMult + SideAdd, _
+                 .Shapes.All.SizeHeight * SideMult + SideAdd
+        .Shapes.All.SetPositionEx cdrCenter, .CenterX, .CenterY
     End With
 End Sub
 
@@ -1339,6 +1358,15 @@ Public Sub SegmentDelete(ByVal Segment As Segment)
         Set Segment = Segment.Subpath.LastSegment
     End If
     Segment.EndNode.Delete
+End Sub
+
+Public Sub SetNoOutline( _
+               ByVal Shapes As ShapeRange _
+           )
+    Dim Shape As Shape
+    For Each Shape In Shapes
+        Shape.Outline.SetNoOutline
+    Next Shape
 End Sub
 
 'присвоить цвет абриса ренджу

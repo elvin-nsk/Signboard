@@ -51,7 +51,8 @@ Private Function MakeGroovePunch() As Shape
     Set MakeGroovePunch = _
         MakePunch( _
             GROOVE_PUNCH_LENGTH, GROOVE_SIZE, _
-            OutlineColor:=CreateCMYKColor(0, 100, 0, 0) _
+            OutlineColor:=CreateColor(GROOVE_COLOR), _
+            Name:=GROOVE_NAME _
         )
 End Function
 
@@ -59,7 +60,7 @@ Private Property Get AngleOutside(ByVal Node As Node) As Double
     With NodeData.New_(Node)
         AngleOutside = (.Angle1 + .Angle2) / 2
         Dim ProbePoint As Point: Set ProbePoint = _
-            Probe(.Position, AngleOutside, GROOVE_PUNCH_LENGTH)
+            Probe(.Position, AngleOutside, PROBE_RADIUS)
         If Not Node.Parent.IsPointInside(ProbePoint.x, ProbePoint.y) Then _
             Exit Property
         AngleOutside = AngleOutside + 180
@@ -73,7 +74,7 @@ Private Property Get IsNodeConvex(ByVal Node As Node) As Boolean
         ProbeHits( _
             Node.Parent, _
             Point.New_(Node.PositionX, Node.PositionY), _
-            GROOVE_SIZE / 2, _
+            PROBE_RADIUS, _
             MaxHits _
         )
     If Hits < MaxHits * CONCAVITY_MULT Then IsNodeConvex = True
