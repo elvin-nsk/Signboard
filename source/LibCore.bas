@@ -1,7 +1,7 @@
 Attribute VB_Name = "LibCore"
 '===============================================================================
 '   Модуль          : LibCore
-'   Версия          : 2024.06.11
+'   Версия          : 2024.06.20
 '   Автор           : elvin-nsk (me@elvin.nsk.ru)
 '   Использован код : dizzy (из макроса CtC), Alex Vakulenko
 '                     и др.
@@ -11,6 +11,7 @@ Attribute VB_Name = "LibCore"
 '===============================================================================
 
 Option Explicit
+Option Base 1
 
 '===============================================================================
 ' # приватные переменные модуля
@@ -481,6 +482,30 @@ Public Property Get GreaterDim(ByVal ShapeOrRangeOrPage As Object) As Double
     End If
 End Property
 
+Public Property Get HasSize(ByRef MaybeSome As Variant) As Boolean
+    If Not ObjectAssigned(MaybeSome) Then Exit Property
+    If TypeOf MaybeSome Is Shape Then GoTo Success
+    If TypeOf MaybeSome Is ShapeRange Then GoTo Success
+    If TypeOf MaybeSome Is Page Then GoTo Success
+    If TypeOf MaybeSome Is Rect Then GoTo Success
+    Exit Property
+Success:
+    HasSize = True
+End Property
+
+Public Property Get HasPosition(ByRef MaybeSome As Variant) As Boolean
+    If Not ObjectAssigned(MaybeSome) Then Exit Property
+    If TypeOf MaybeSome Is Shape Then GoTo Success
+    If TypeOf MaybeSome Is ShapeRange Then GoTo Success
+    If TypeOf MaybeSome Is Page Then GoTo Success
+    If TypeOf MaybeSome Is Rect Then GoTo Success
+    If TypeOf MaybeSome Is Node Then GoTo Success
+    If TypeOf MaybeSome Is Subpath Then GoTo Success
+    Exit Property
+Success:
+    HasPosition = True
+End Property
+
 Public Property Get IsColor(ByRef MaybeColor As Variant) As Boolean
     If Not ObjectAssigned(MaybeColor) Then Exit Property
     IsColor = TypeOf MaybeColor Is Color
@@ -489,6 +514,12 @@ End Property
 Public Property Get IsCurve(ByRef MaybeCurve As Variant) As Boolean
     If Not ObjectAssigned(MaybeCurve) Then Exit Property
     IsCurve = TypeOf MaybeCurve Is Curve
+End Property
+
+Public Property Get IsDark(ByVal Color As Color) As Boolean
+    Dim HSB As Color: Set HSB = Color.GetCopy
+    HSB.ConvertToHSB
+    IsDark = HSB.HSBBrightness < 128
 End Property
 
 Public Property Get IsDocument(ByRef MaybeDocument As Variant) As Boolean
@@ -976,30 +1007,6 @@ Public Sub Align( _
         End Select
     End With
 End Sub
-
-Public Property Get HasSize(ByRef MaybeSome As Variant) As Boolean
-    If Not ObjectAssigned(MaybeSome) Then Exit Property
-    If TypeOf MaybeSome Is Shape Then GoTo Success
-    If TypeOf MaybeSome Is ShapeRange Then GoTo Success
-    If TypeOf MaybeSome Is Page Then GoTo Success
-    If TypeOf MaybeSome Is Rect Then GoTo Success
-    Exit Property
-Success:
-    HasSize = True
-End Property
-
-Public Property Get HasPosition(ByRef MaybeSome As Variant) As Boolean
-    If Not ObjectAssigned(MaybeSome) Then Exit Property
-    If TypeOf MaybeSome Is Shape Then GoTo Success
-    If TypeOf MaybeSome Is ShapeRange Then GoTo Success
-    If TypeOf MaybeSome Is Page Then GoTo Success
-    If TypeOf MaybeSome Is Rect Then GoTo Success
-    If TypeOf MaybeSome Is Node Then GoTo Success
-    If TypeOf MaybeSome Is Subpath Then GoTo Success
-    Exit Property
-Success:
-    HasPosition = True
-End Property
 
 Public Function BreakApart(ByVal Shape As Shape) As ShapeRange
     If Shape.Curve.SubPaths.Count < 2 Then

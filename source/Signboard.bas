@@ -1,7 +1,7 @@
 Attribute VB_Name = "Signboard"
 '===============================================================================
 '   Макрос          : Signboard
-'   Версия          : 2024.06.11
+'   Версия          : 2024.06.20
 '   Сайты           : https://vk.com/elvin_macro
 '                     https://github.com/elvin-nsk
 '   Автор           : elvin-nsk (me@elvin.nsk.ru)
@@ -14,7 +14,7 @@ Option Explicit
 
 Public Const APP_NAME As String = "Signboard"
 Public Const APP_DISPLAYNAME As String = APP_NAME
-Public Const APP_VERSION As String = "2024.06.11"
+Public Const APP_VERSION As String = "2024.06.20"
 Public Const APP_URL As String = "https://vk.com/elvin_macro/" & APP_NAME
 
 '===============================================================================
@@ -44,6 +44,8 @@ Public Const BOTTOM_HOLE_NAME As String = "BOTTOM_HOLE"
 Public Const BEAM_THICKNESS As Double = 20
 'Public Const BEAM_COLOR As String = "CMYK,USER,100,100,0,0"
 Public Const HORIZONTAL_BEAM_NAME As String = "H_BEAM"
+Public Const HOLES_DICTIONARY_NAME As String = "Holes"
+
 Public Const BOTTOM_GROOVE_SIZE As Double = 6
 Public Const BOTTOM_GROOVE_PUNCH_LENGTH As Double = BOTTOM_GROOVE_SIZE * 3
 Public Const BOTTOM_GROOVE_STEP As Double = BOTTOM_GROOVE_SIZE / 3
@@ -138,12 +140,8 @@ Sub Part2__MakeHoles()
     If ShapesForHoles.Count = 0 Then Log.Add "Не найдено элементов для отверстий"
     If Log.Count > 0 Then GoTo Finally
     
-    Dim View As New MainView
-    Dim Cfg As FormToJsonBinder
-    Set Cfg = BindConfig(View)
-    View.Show vbModal
-    Cfg.RefreshDictionary
-    If View.IsCancel Then GoTo Finally
+    Dim Cfg As Dictionary
+    If Not ShowHolesView(Cfg) Then GoTo Finally
     
     BoostStart "Установка отверстий"
     
@@ -240,16 +238,6 @@ Private Function CheckShapesHasCurves( _
     Next Shape
 End Function
 
-Private Function BindConfig(ByVal View As MSForms.UserForm) As FormToJsonBinder
-    Set BindConfig = FormToJsonBinder.New_( _
-        FileBaseName:="elvin_" & APP_NAME, _
-        Form:=View, _
-        ControlNames:=Collection( _
-            "MinEdgeSecurity" _
-        ) _
-    )
-End Function
-
 Private Sub ProcessFaceDoc()
     With ActiveDocument
         .Unit = cdrMillimeter
@@ -261,10 +249,27 @@ Private Sub ProcessFaceDoc()
     End With
 End Sub
 
+'-------------------------------------------------------------------------------
+
+Private Function ShowHolesView(ByRef Cfg As Dictionary) As Boolean
+    Dim FileBinder As JsonFileBinder: Set FileBinder = BindConfig
+    Set Cfg = FileBinder.GetOrMakeSubDictionary("Holes")
+    Dim View As New HolesView
+    Dim ViewBinder As ViewToDictionaryBinder: Set ViewBinder = _
+        ViewToDictionaryBinder.New_( _
+            Dictionary:=Cfg, _
+            View:=View, _
+            ControlNames:=Pack("MinEdgeSecurity") _
+        )
+    View.Show vbModal
+    ViewBinder.RefreshDictionary
+    ShowHolesView = View.IsOk
+End Function
+
 Private Sub MakeHoles( _
                 ByVal Shapes As ShapeRange, _
                 ByRef Beams As Beams, _
-                ByVal Cfg As FormToJsonBinder, _
+                ByVal Cfg As Dictionary, _
                 ByVal Log As Logger _
             )
     Shapes.Sort "@Shape1.Left < @Shape2.Left"
@@ -308,12 +313,16 @@ Private Property Get FindBeams(ByVal Shapes As ShapeRange) As Beams
     End With
 End Property
 
+'-------------------------------------------------------------------------------
+
 Private Function CutShapes( _
                      ByVal Punches As ShapeRange, _
                      ByVal Shapes As ShapeRange _
                  )
     Punches.Combine.Trim Shapes.Combine, False, False
 End Function
+
+'-------------------------------------------------------------------------------
 
 Private Sub CheckLog(ByVal Log As Logger)
     If IsSome(Log) Then Log.Check
@@ -420,9 +429,13 @@ Public Property Get ProbeHits( _
     Next Angle
 End Property
 
+Private Function BindConfig() As JsonFileBinder
+    Set BindConfig = JsonFileBinder.New_("elvin_" & APP_NAME)
+End Function
+
 '===============================================================================
 ' # Tests
 
 Private Sub testSomething()
-    
+    '
 End Sub
