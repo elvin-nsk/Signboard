@@ -12,6 +12,8 @@ Option Explicit
 '===============================================================================
 ' # Fields
 
+Public BeamEdgeOffset As Double
+
 '===============================================================================
 ' # Public
 
@@ -29,23 +31,24 @@ Public Sub ProcessBackDoc()
         Dim ContourExt As Shape: Set ContourExt = _
             MakeContour(Source, BACK_CONTOUR_EXT)
         ContourExt.Outline.Color = CreateColor(BACK_COLOR)
-        
-        MakeBeam Source.BoundingBox, Source.TopY - BEAM_THICKNESS
-        MakeBeam Source.BoundingBox, Source.BottomY
-        
+                       
         Dim IntShapes As ShapeRange: Set IntShapes = ContourInt.UngroupAllEx
         NameShapes IntShapes, BACK_CONTOUR_INT_NAME
+        
+        ContourExt.Name = BACK_CONTOUR_EXT_NAME
         Dim ExtShapes As ShapeRange: Set ExtShapes = ContourExt.BreakApartEx
-        NameShapes ExtShapes, BACK_CONTOUR_EXT_NAME
         
         With New InnerGrooves
             Set .Shapes = IntShapes
             .MakeGrooves
         End With
         With New BottomGrooves
-            Set .Shapes = ShapesNotInside(ExtShapes)
+            Set .Shapes = FindShapesNotInside(ExtShapes)
             .MakeBottomGrooves
         End With
+        
+        Set IntShapes = IntShapes.BreakApartEx
+        MakeBeams FindShapesNotInBounds(IntShapes)
         
         .Name = BACK_NAME
         Source.Delete
@@ -78,6 +81,31 @@ Private Function MakeContour( _
     End With
 End Function
 
+Private Function MakeBeams(ByVal Shapes As ShapeRange) As ShapeRange
+    Shapes.Sort "@Shape1.Top < @Shape2.Top"
+    Dim TopBeam As Shape: Set TopBeam = _
+        MakeBeam( _
+            Shapes.BoundingBox, _
+            Shapes.FirstShape.TopY - BEAM_THICKNESS - BeamEdgeOffset _
+        )
+        
+    Shapes.Sort "@Shape1.Bottom > @Shape2.Bottom"
+    Dim BottomBeamY As Double: BottomBeamY = _
+        Shapes.FirstShape.BottomY + BeamEdgeOffset
+    Dim MultDistance As Double: MultDistance = _
+        ClosestDividend(TopBeam.BottomY - BottomBeamY, QUANTIZATION_STEP)
+    
+    Dim BottomBeam As Shape: Set BottomBeam = _
+        MakeBeam( _
+            Shapes.BoundingBox, _
+            TopBeam.BottomY - MultDistance _
+        )
+    
+    Set MakeBeams = CreateShapeRange
+    MakeBeams.Add TopBeam
+    MakeBeams.Add BottomBeam
+End Function
+
 Private Function MakeBeam( _
                      ByVal ShapesRect As Rect, _
                      ByVal Bottom As Double _
@@ -86,43 +114,42 @@ Private Function MakeBeam( _
         ActiveLayer.CreateRectangle( _
             ShapesRect.Left, Bottom + BEAM_THICKNESS, ShapesRect.Right, Bottom _
         )
-    MakeBeam.Fill.ApplyNoFill
+    ApplyBeamCommonProps MakeBeam
     MakeBeam.Name = HORIZONTAL_BEAM_NAME
 End Function
 
-Private Property Get ShapesNotInside( _
+'шейпы, которые не находятся целиком внутри крайних координат других по оси X
+Private Property Get FindShapesNotInBounds( _
                          ByVal Shapes As ShapeRange _
                      ) As ShapeRange
-    Set ShapesNotInside = CreateShapeRange
+    Set FindShapesNotInBounds = CreateShapeRange
     Dim Shape As Shape
     For Each Shape In Shapes
-        If Not ShapeInsideAny(Shape, Shapes) Then ShapesNotInside.Add Shape
+        If Not ShapeInBoundsOfAny(Shape, Shapes) Then _
+            FindShapesNotInBounds.Add Shape
     Next Shape
 End Property
 
-Private Property Get ShapeInsideAny( _
+Private Property Get ShapeInBoundsOfAny( _
                          ByVal Shape As Shape, _
                          ByVal Shapes As ShapeRange _
                      ) As Boolean
     Dim CurrentShape As Shape
     For Each CurrentShape In Shapes
         If Not CurrentShape Is Shape Then
-            If IsAllNodesInside(Shape.Curve.Nodes.All, CurrentShape.Curve) Then
-                ShapeInsideAny = True
+            If ShapeInBoundsOf(Shape, CurrentShape) Then
+                ShapeInBoundsOfAny = True
                 Exit Property
             End If
         End If
     Next CurrentShape
 End Property
 
-Private Property Get IsAllNodesInside( _
-                         ByVal Nodes As NodeRange, _
-                         ByVal Curve As Curve _
+Private Property Get ShapeInBoundsOf( _
+                         ByVal Shape1 As Shape, _
+                         ByVal Shape2 As Shape _
                      ) As Boolean
-    Dim Node As Node
-    For Each Node In Nodes
-        If Not Curve.IsPointInside(Node.PositionX, Node.PositionY) Then _
-            Exit Property
-    Next Node
-    IsAllNodesInside = True
+    ShapeInBoundsOf = _
+        (Shape1.LeftX > Shape2.LeftX) _
+    And (Shape1.RightX < Shape2.RightX)
 End Property

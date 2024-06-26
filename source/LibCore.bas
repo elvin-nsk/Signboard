@@ -1,7 +1,7 @@
 Attribute VB_Name = "LibCore"
 '===============================================================================
 '   Модуль          : LibCore
-'   Версия          : 2024.06.20
+'   Версия          : 2024.06.26
 '   Автор           : elvin-nsk (me@elvin.nsk.ru)
 '   Использован код : dizzy (из макроса CtC), Alex Vakulenko
 '                     и др.
@@ -45,6 +45,18 @@ Public Const CUSTOM_ERROR = vbObjectError Or 32
 
 '===============================================================================
 ' # функции поиска и получения информации об объектах корела
+
+Public Property Get AllNodesInside( _
+                        ByVal Nodes As NodeRange, _
+                        ByVal Curve As Curve _
+                    ) As Boolean
+    Dim Node As Node
+    For Each Node In Nodes
+        If Not Curve.IsPointInside(Node.PositionX, Node.PositionY) Then _
+            Exit Property
+    Next Node
+    AllNodesInside = True
+End Property
 
 'возвращает среднее сторон шейпа/рэйнджа/страницы
 Public Property Get AverageDim(ByVal ShapeOrRangeOrPage As Object) As Double
@@ -250,6 +262,16 @@ Public Property Get FindShapesActivePageLayers( _
                 FindShapesActivePageLayers.AddRange tLayer.Shapes.All
     Next
     End If
+End Property
+
+Public Property Get FindShapesNotInside( _
+                        ByVal Shapes As ShapeRange _
+                    ) As ShapeRange
+    Set FindShapesNotInside = CreateShapeRange
+    Dim Shape As Shape
+    For Each Shape In Shapes
+        If Not ShapeInsideAny(Shape, Shapes) Then FindShapesNotInside.Add Shape
+    Next Shape
 End Property
 
 Public Property Get FindShapesWithText( _
@@ -862,6 +884,17 @@ Public Property Get PixelsToDocUnits(ByVal SizeInPixels As Long) As Double
     PixelsToDocUnits = ConvertUnits(SizeInPixels, cdrPixel, ActiveDocument.Unit)
 End Property
 
+Public Property Get RectInsideRect( _
+                        ByVal Rect1 As Rect, _
+                        ByVal Rect2 As Rect _
+                    ) As Boolean
+    RectInsideRect = _
+        (Rect1.Left > Rect2.Left) _
+    And (Rect1.Right < Rect2.Right) _
+    And (Rect1.Top < Rect2.Top) _
+    And (Rect1.Bottom > Rect2.Bottom)
+End Property
+
 Public Property Get ShapeHasOutline(ByVal Shape As Shape) As Boolean
     On Error GoTo Fail
     ShapeHasOutline = Not (Shape.Outline.Type = cdrNoOutline)
@@ -872,6 +905,48 @@ Public Property Get ShapeHasUniformFill(ByVal Shape As Shape) As Boolean
     On Error GoTo Fail
     ShapeHasUniformFill = (Shape.Fill.Type = cdrUniformFill)
 Fail:
+End Property
+
+Public Property Get ShapeInsideAny( _
+                        ByVal Shape As Shape, _
+                        ByVal Shapes As ShapeRange _
+                    ) As Boolean
+    Dim Curve As Curve
+    Dim CurrentShape As Shape
+    For Each CurrentShape In Shapes
+        If Not CurrentShape Is Shape Then
+            If ShapeInsideShape(Shape, CurrentShape) Then
+                ShapeInsideAny = True
+                Exit Property
+            End If
+        End If
+    Next CurrentShape
+End Property
+
+Public Property Get ShapeInsideShape( _
+                        ByVal Shape1 As Shape, _
+                        ByVal Shape2 As Shape _
+                    ) As Boolean
+    Dim Curve1 As Curve
+    If HasCurve(Shape1) Then
+        Set Curve1 = Shape1.Curve
+    ElseIf HasDiplayCurve(Shape1) Then
+        Set Curve1 = Shape1.DisplayCurve
+    End If
+    
+    Dim Curve2 As Curve
+    If HasCurve(Shape2) Then
+        Set Curve2 = Shape2.Curve
+    ElseIf HasDiplayCurve(Shape2) Then
+        Set Curve2 = Shape2.DisplayCurve
+    End If
+    
+    If IsNone(Curve1) Or IsNone(Curve2) Then
+        ShapeInsideShape = _
+            RectInsideRect(Shape1.BoundingBox, Shape2.BoundingBox)
+    Else
+        ShapeInsideShape = AllNodesInside(Curve1.Nodes.All, Curve2)
+    End If
 End Property
 
 Public Property Get ShapeIsInGroup(ByVal Shape As Shape) As Boolean
@@ -1275,8 +1350,38 @@ Public Function Intersect( _
 End Function
 
 'инструмент Join Curves
-Public Function JoinCurves(ByVal ShapeOrShapes As Variant, ByVal Tolerance As Double)
+Public Function JoinCurves( _
+                    ByVal ShapeOrShapes As Variant, _
+                    ByVal Tolerance As Double _
+                )
     ShapeOrShapes.CustomCommand "ConvertTo", "JoinCurves", Tolerance
+End Function
+
+'ПРОВЕРИТЬ
+Public Function MakeContour( _
+                    ByRef Shape As Shape, _
+                    ByVal Offset As Double, _
+                    Optional ByVal CornerType As cdrContourCornerType _
+                ) As Shape
+    Dim Direction As cdrContourDirection
+    If Offset > 0 Then
+        Direction = cdrContourOutside
+    ElseIf Offset < 0 Then
+        Direction = cdrContourInside
+    Else
+        Exit Function
+    End If
+    Dim Contour As ShapeRange
+    With Shape.CreateContour( _
+            Direction:=Direction, _
+            Offset:=Abs(Offset), _
+            Steps:=1 _
+        )
+        .Contour.CornerType = CornerType
+        Set Contour = .Separate
+    End With
+    Set MakeContour = Contour(1)
+    Set Shape = Contour(2)
 End Function
 
 'не работает с поверклипом
@@ -1365,6 +1470,29 @@ Public Sub SegmentDelete(ByVal Segment As Segment)
         Set Segment = Segment.Subpath.LastSegment
     End If
     Segment.EndNode.Delete
+End Sub
+
+Public Sub SetDimensionPrecision( _
+               ByVal DimensionShape As Shape, _
+               ByVal Precision As Long _
+           )
+    SetDimensionProperty DimensionShape, "precision", Precision
+End Sub
+
+Public Sub SetDimensionProperty( _
+               ByVal DimensionShape As Shape, _
+               ByVal PropertyName As String, _
+               ByVal Value As Variant _
+           )
+    DimensionShape.Style.GetProperty("dimension") _
+        .SetProperty PropertyName, Value
+End Sub
+
+Public Sub SetDimensionShowUnits( _
+               ByVal DimensionShape As Shape, _
+               ByVal ShowUnits As Boolean _
+           )
+    SetDimensionProperty DimensionShape, "showUnits", ShowUnits
 End Sub
 
 Public Sub SetNoOutline( _
@@ -1712,20 +1840,20 @@ End Sub
 
 'находит ближайшее к Value число, которое делится на Divisor без остатка
 Public Property Get ClosestDividend( _
-                        ByVal InitialDividend As Double, _
+                        ByVal Value As Double, _
                         ByVal Divisor As Double _
                     ) As Double
-    Dim q As Long: q = Fix(InitialDividend / Divisor)
+    Dim q As Long: q = Fix(Value / Divisor)
     Dim n1 As Double: n1 = Divisor * q
 
     Dim n2 As Double
-    If (InitialDividend * Divisor) > 0 Then
+    If (Value * Divisor) > 0 Then
         n2 = Divisor * (q + 1)
     Else
         n2 = Divisor * (q - 1)
     End If
 
-    If Abs(InitialDividend - n1) < Abs(InitialDividend - n2) Then
+    If Abs(Value - n1) < Abs(Value - n2) Then
         ClosestDividend = n1
     Else
         ClosestDividend = n2

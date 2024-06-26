@@ -35,14 +35,14 @@ Private Sub MakeTopHolesInShape( _
     Dim ProbeRadius As Double: ProbeRadius = EdgeSecurity + TOP_HOLE_SIZE / 2
     With NextValidPoint( _
             Beam, Shape, Point.New_(Shape.LeftX + ProbeRadius, Beam.CenterY), _
-            HOLES_STEP, ProbeRadius, TOP_HOLE_EDGE_SPACE _
+            QUANTIZATION_STEP, ProbeRadius, TOP_HOLE_EDGE_SPACE _
         )
         If .Some Then MakeTopCircle .Point
     End With
     If Shape.SizeWidth > ProbeRadius * 4 Then
         With NextValidPoint( _
                 Beam, Shape, Point.New_(Shape.RightX - ProbeRadius, Beam.CenterY), _
-                -HOLES_STEP, ProbeRadius, TOP_HOLE_EDGE_SPACE _
+                -QUANTIZATION_STEP, ProbeRadius, TOP_HOLE_EDGE_SPACE _
             )
             If .Some Then MakeTopCircle .Point
         End With

@@ -1,7 +1,7 @@
 Attribute VB_Name = "Signboard"
 '===============================================================================
 '   Макрос          : Signboard
-'   Версия          : 2024.06.20
+'   Версия          : 2024.06.26
 '   Сайты           : https://vk.com/elvin_macro
 '                     https://github.com/elvin-nsk
 '   Автор           : elvin-nsk (me@elvin.nsk.ru)
@@ -14,11 +14,12 @@ Option Explicit
 
 Public Const APP_NAME As String = "Signboard"
 Public Const APP_DISPLAYNAME As String = APP_NAME
-Public Const APP_VERSION As String = "2024.06.20"
-Public Const APP_URL As String = "https://vk.com/elvin_macro/" & APP_NAME
+Public Const APP_VERSION As String = "2024.06.26"
 
 '===============================================================================
 ' # Globals
+
+Public Const QUANTIZATION_STEP As Double = 10
 
 Public Const GROOVE_SIZE As Double = 3.2
 Public Const GROOVE_PUNCH_LENGTH As Double = GROOVE_SIZE * 4
@@ -30,20 +31,20 @@ Public Const GROOVE_NAME As String = "INNER_PUNCH"
 Public Const CONCAVITY_MULT As Double = 0.6
 Public Const PROBE_RADIUS As Double = GROOVE_SIZE / 10
 
-Public Const HOLES_STEP As Double = 10
 Public Const TOP_HOLE_SIZE As Double = 4.2
 Public Const TOP_HOLE_STEP As Double = 5
-Public Const TOP_HOLE_EDGE_SPACE As Double = HOLES_STEP
+Public Const TOP_HOLE_EDGE_SPACE As Double = QUANTIZATION_STEP
 Public Const TOP_HOLE_COLOR As String = "CMYK,USER,100,0,0,0"
 Public Const TOP_HOLE_NAME As String = "TOP_HOLE"
 Public Const BOTTOM_HOLE_SIZE As Double = 8
-Public Const BOTTOM_HOLE_EDGE_SPACE As Double = HOLES_STEP
+Public Const BOTTOM_HOLE_EDGE_SPACE As Double = QUANTIZATION_STEP
 Public Const BOTTOM_HOLE_COLOR As String = TOP_HOLE_COLOR
 Public Const BOTTOM_HOLE_NAME As String = "BOTTOM_HOLE"
 'Public Const PROBE_CIRCLE_MULT As Double = 0.8
 Public Const BEAM_THICKNESS As Double = 20
-'Public Const BEAM_COLOR As String = "CMYK,USER,100,100,0,0"
+Public Const VERTICAL_BEAM_NAME As String = "V_BEAM"
 Public Const HORIZONTAL_BEAM_NAME As String = "H_BEAM"
+Public Const VERTICAL_BEAM_STEP As Double = 1000
 Public Const HOLES_DICTIONARY_NAME As String = "Holes"
 
 Public Const BOTTOM_GROOVE_SIZE As Double = 6
@@ -62,6 +63,11 @@ Public Const BACK_CONTOUR_INT As Double = 0.8
 Public Const BACK_CONTOUR_INT_NAME As String = "INT_CONTOUR"
 Public Const BACK_CONTOUR_EXT As Double = 0.8
 Public Const BACK_CONTOUR_EXT_NAME As String = "EXT_CONTOUR"
+
+Public Const DIMENSION_OFFSET_MULT As Double = 0.1
+Public Const DIMENSION_TEXT_SIZE_MULT As Double = 0.5
+Public Const DIMENSION_SHAPES_COLOR As String = "CMYK,USER,0,0,0,100"
+Public Const DIMENSIONS_NAME As String = "рама с размерами"
 
 Public Type Beams
     TopBeam As Shape
@@ -95,6 +101,9 @@ Sub Part1__PrepareSelected()
     Set Source = ActiveSelectionRange
     
     If Not CheckShapesHasCurves(Shapes, Log) Then GoTo Finally
+    
+    Dim Cfg As Dictionary
+    If Not ShowPreparationsView(Cfg) Then GoTo Finally
         
     Shapes.CreateDocumentFrom.Activate
     BoostStart "Подготовка лицевой части"
@@ -104,6 +113,7 @@ Sub Part1__PrepareSelected()
     Shapes.CreateDocumentFrom.Activate
     BoostStart "Подготовка задника"
     With New BackDoc
+        .BeamEdgeOffset = Cfg("BeamEdgeOffset")
         .ProcessBackDoc
     End With
     BoostFinish
@@ -137,13 +147,14 @@ Sub Part2__MakeHoles()
     If Not Beams.Some Then Log.Add "Не найдены верняя и/или нижняя части рамы"
     Dim ShapesForHoles As ShapeRange: Set ShapesForHoles = _
         FindShapesByName(Shapes, BACK_CONTOUR_INT_NAME)
+    Set ShapesForHoles = FindShapesNotInside(ShapesForHoles)
     If ShapesForHoles.Count = 0 Then Log.Add "Не найдено элементов для отверстий"
     If Log.Count > 0 Then GoTo Finally
     
     Dim Cfg As Dictionary
     If Not ShowHolesView(Cfg) Then GoTo Finally
     
-    BoostStart "Установка отверстий"
+    BoostStart "Отверстия и вертикальные перемычки"
     
     MakeHoles ShapesForHoles, Beams, Cfg, Log
     
@@ -158,7 +169,7 @@ Catch:
 
 End Sub
 
-Sub Part3__CutOut()
+Sub Part3__Finalize()
 
     #If DebugMode = 0 Then
     On Error GoTo Catch
@@ -171,10 +182,16 @@ Sub Part3__CutOut()
         If .IsError Then GoTo Finally
         Set Shapes = .Shapes
     End With
+    
+    Dim BottomHoles As ShapeRange: Set BottomHoles = _
+        FindShapesByName(Shapes, BOTTOM_HOLE_NAME)
+        
+    Dim VerticalBeams As ShapeRange: Set VerticalBeams = _
+        FindShapesByName(Shapes, VERTICAL_BEAM_NAME)
 
     Dim IntPunches As New ShapeRange
     IntPunches.AddRange FindShapesByName(Shapes, TOP_HOLE_NAME)
-    IntPunches.AddRange FindShapesByName(Shapes, BOTTOM_HOLE_NAME)
+    IntPunches.AddRange BottomHoles
     IntPunches.AddRange FindShapesByName(Shapes, GROOVE_NAME)
     
     Dim ExtPunches As New ShapeRange: Set ExtPunches = _
@@ -196,16 +213,49 @@ Sub Part3__CutOut()
     End If
     
     If Log.Count > 0 Then GoTo Finally
-    
+        
+    Dim BackDoc As Document: Set BackDoc = ActiveDocument
     BoostStart "Вырезание"
+    
+    Dim BottomHolesDup As ShapeRange: Set BottomHolesDup = BottomHoles.Duplicate
     
     If IntPunches.Count > 0 And IntShapes.Count > 0 Then _
         CutShapes IntPunches, IntShapes
     If ExtPunches.Count > 0 And ExtShapes.Count > 0 Then _
         CutShapes ExtPunches, ExtShapes
+        
+    Set Shapes = ActivePage.Shapes.All
+        
+    Dim DimensionShapesToDelete As New ShapeRange
+    DimensionShapesToDelete.AddRange BottomHolesDup
+    DimensionShapesToDelete.AddRange FindShapesByName(Shapes, VERTICAL_BEAM_NAME)
+    DimensionShapesToDelete.AddRange FindShapesByName(Shapes, HORIZONTAL_BEAM_NAME)
+    
+    Dim DimensionShapes As New ShapeRange
+    DimensionShapes.AddRange DimensionShapesToDelete
+    DimensionShapes.AddRange FindShapesByName(Shapes, BACK_CONTOUR_INT_NAME)
+    DimensionShapes.AddRange FindShapesByName(Shapes, BACK_CONTOUR_EXT_NAME)
+            
+    Dim DimensionsDoc As Document
+    Set DimensionsDoc = DimensionShapes.CreateDocumentFrom
+    DimensionsDoc.Name = DIMENSIONS_NAME
+    
+    DimensionsDoc.Activate
+    BoostStart "Расстановка размеров"
+    
+    With New DimensionsMaker
+        .MakeDimensions
+    End With
+    
+    BoostFinish
+    
+    BackDoc.Activate
+    DimensionShapesToDelete.Delete
+    BoostFinish
+    
+    DimensionsDoc.Activate
     
 Finally:
-    BoostFinish
     CheckLog Log
     Exit Sub
 
@@ -251,6 +301,21 @@ End Sub
 
 '-------------------------------------------------------------------------------
 
+Private Function ShowPreparationsView(ByRef Cfg As Dictionary) As Boolean
+    Dim FileBinder As JsonFileBinder: Set FileBinder = BindConfig
+    Set Cfg = FileBinder.GetOrMakeSubDictionary("Preparations")
+    Dim View As New PreparationsView
+    Dim ViewBinder As ViewToDictionaryBinder: Set ViewBinder = _
+        ViewToDictionaryBinder.New_( _
+            Dictionary:=Cfg, _
+            View:=View, _
+            ControlNames:=Pack("BeamEdgeOffset") _
+        )
+    View.Show vbModal
+    ViewBinder.RefreshDictionary
+    ShowPreparationsView = View.IsOk
+End Function
+
 Private Function ShowHolesView(ByRef Cfg As Dictionary) As Boolean
     Dim FileBinder As JsonFileBinder: Set FileBinder = BindConfig
     Set Cfg = FileBinder.GetOrMakeSubDictionary("Holes")
@@ -281,37 +346,14 @@ Private Sub MakeHoles( _
         .MakeTopHoles
     End With
     With New BottomHoles
-        Set .Beam = Beams.BottomBeam
+        Set .TopBeam = Beams.TopBeam
+        Set .BottomBeam = Beams.BottomBeam
         Set .Shapes = Shapes
         .EdgeSecurity = Cfg("MinEdgeSecurity")
         .MakeBottomHoles
     End With
 
 End Sub
-
-Private Property Get FindBeams(ByVal Shapes As ShapeRange) As Beams
-    Dim Shape As Shape
-    With FindBeams
-        Set .AllBeams = CreateShapeRange
-        For Each Shape In Shapes
-            If Shape.Name = HORIZONTAL_BEAM_NAME Then
-               .AllBeams.Add Shape
-            End If
-        Next Shape
-        If .AllBeams.Count <> 2 Then
-            'TODO Log
-            Exit Property
-        End If
-        If .AllBeams.Shapes(1).TopY > .AllBeams.Shapes(2).TopY Then
-            Set .TopBeam = .AllBeams.Shapes(1)
-            Set .BottomBeam = .AllBeams.Shapes(2)
-        Else
-            Set .TopBeam = .AllBeams.Shapes(2)
-            Set .BottomBeam = .AllBeams.Shapes(1)
-        End If
-        .Some = True
-    End With
-End Property
 
 '-------------------------------------------------------------------------------
 
@@ -334,6 +376,29 @@ End Sub
 
 '===============================================================================
 ' # Common
+
+Public Property Get FindBeams(ByVal Shapes As ShapeRange) As Beams
+    Dim Shape As Shape
+    With FindBeams
+        Set .AllBeams = CreateShapeRange
+        For Each Shape In Shapes
+            If Shape.Name = HORIZONTAL_BEAM_NAME Then
+               .AllBeams.Add Shape
+            End If
+        Next Shape
+        If .AllBeams.Count <> 2 Then
+            Exit Property
+        End If
+        If .AllBeams.Shapes(1).TopY > .AllBeams.Shapes(2).TopY Then
+            Set .TopBeam = .AllBeams.Shapes(1)
+            Set .BottomBeam = .AllBeams.Shapes(2)
+        Else
+            Set .TopBeam = .AllBeams.Shapes(2)
+            Set .BottomBeam = .AllBeams.Shapes(1)
+        End If
+        .Some = True
+    End With
+End Property
 
 Public Function MakeCircle( _
                     ByVal Center As Point, _
@@ -429,6 +494,10 @@ Public Property Get ProbeHits( _
     Next Angle
 End Property
 
+Public Sub ApplyBeamCommonProps(ByVal Beam As Shape)
+    Beam.Fill.ApplyNoFill
+End Sub
+
 Private Function BindConfig() As JsonFileBinder
     Set BindConfig = JsonFileBinder.New_("elvin_" & APP_NAME)
 End Function
@@ -436,6 +505,18 @@ End Function
 '===============================================================================
 ' # Tests
 
-Private Sub testSomething()
-    '
+Private Sub testDividend()
+    Show ClosestDividend(671, 10) '670
+End Sub
+
+Private Sub testSnapPoints()
+    With ActivePage.Shapes.First
+        Dim Index As Long
+        Dim Point As SnapPoint
+        For Each Point In .SnapPointsOfType(cdrSnapPointBBox)
+            Index = Index + 1
+            ActiveLayer.CreateArtisticText _
+                Point.PositionX, Point.PositionY, Index
+        Next Point
+    End With
 End Sub
