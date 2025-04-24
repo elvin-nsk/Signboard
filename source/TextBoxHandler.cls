@@ -8,12 +8,12 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = True
 '===============================================================================
-'   Модуль          : TextBoxHandler
-'   Версия          : 2024.02.21
-'   Автор           : elvin-nsk (me@elvin.nsk.ru)
-'   Сайт            : https://github.com/elvin-nsk/LowCoupledFromCore
-'   Назначение      : сохранение значений TextBox на форме в заданном диапазоне
-'   Зависимости     : нет
+'   РњРѕРґСѓР»СЊ          : TextBoxHandler
+'   Р’РµСЂСЃРёСЏ          : 2024.02.21
+'   РђРІС‚РѕСЂ           : elvin-nsk (me@elvin.nsk.ru)
+'   РЎР°Р№С‚            : https://github.com/elvin-nsk/LowCoupledFromCore
+'   РќР°Р·РЅР°С‡РµРЅРёРµ      : СЃРѕС…СЂР°РЅРµРЅРёРµ Р·РЅР°С‡РµРЅРёР№ TextBox РЅР° С„РѕСЂРјРµ РІ Р·Р°РґР°РЅРЅРѕРј РґРёР°РїР°Р·РѕРЅРµ
+'   Р—Р°РІРёСЃРёРјРѕСЃС‚Рё     : РЅРµС‚
 '===============================================================================
 
 '@PredeclaredId

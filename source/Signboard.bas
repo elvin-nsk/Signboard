@@ -1,10 +1,10 @@
 Attribute VB_Name = "Signboard"
 '===============================================================================
-'   Макрос          : Signboard
-'   Версия          : 2024.06.26
-'   Сайты           : https://vk.com/elvin_macro
+'   РњР°РєСЂРѕСЃ          : Signboard
+'   Р’РµСЂСЃРёСЏ          : 2025.04.24
+'   РЎР°Р№С‚С‹           : https://vk.com/elvin_macro
 '                     https://github.com/elvin-nsk
-'   Автор           : elvin-nsk (me@elvin.nsk.ru)
+'   РђРІС‚РѕСЂ           : elvin-nsk (me@elvin.nsk.ru)
 '===============================================================================
 
 Option Explicit
@@ -14,7 +14,7 @@ Option Explicit
 
 Public Const APP_NAME As String = "Signboard"
 Public Const APP_DISPLAYNAME As String = APP_NAME
-Public Const APP_VERSION As String = "2024.06.26"
+Public Const APP_VERSION As String = "2025.04.24"
 
 '===============================================================================
 ' # Globals
@@ -26,8 +26,8 @@ Public Const GROOVE_PUNCH_LENGTH As Double = GROOVE_SIZE * 4
 Public Const GROOVE_COLOR As String = "CMYK,USER,0,100,0,0"
 Public Const GROOVE_NAME As String = "INNER_PUNCH"
 
-'0 ... 1, чем больше - тем более вогнутым должен быть угол
-'для появления на нём засечек
+'0 ... 1, С‡РµРј Р±РѕР»СЊС€Рµ - С‚РµРј Р±РѕР»РµРµ РІРѕРіРЅСѓС‚С‹Рј РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ СѓРіРѕР»
+'РґР»СЏ РїРѕСЏРІР»РµРЅРёСЏ РЅР° РЅС‘Рј Р·Р°СЃРµС‡РµРє
 Public Const CONCAVITY_MULT As Double = 0.6
 Public Const PROBE_RADIUS As Double = GROOVE_SIZE / 10
 
@@ -56,18 +56,20 @@ Public Const BOTTOM_GROOVE_NAME As String = "BOTTOM_PUNCH"
 Public Const PROBE_STEPS As Long = 36
 
 Public Const FACE_COLOR As String = "CMYK,USER,0,100,100,0"
-Public Const FACE_NAME As String = "лицо"
+Public Const FACE_NAME As String = "Р»РёС†Рѕ"
 Public Const BACK_COLOR As String = "CMYK,USER,100,0,100,0"
-Public Const BACK_NAME As String = "задник"
+Public Const BACK_NAME As String = "Р·Р°РґРЅРёРє"
 Public Const BACK_CONTOUR_INT As Double = 0.8
 Public Const BACK_CONTOUR_INT_NAME As String = "INT_CONTOUR"
 Public Const BACK_CONTOUR_EXT As Double = 0.8
 Public Const BACK_CONTOUR_EXT_NAME As String = "EXT_CONTOUR"
 
+Public Const FACE_HOLE_SIZE As Double = 2
+
 Public Const DIMENSION_OFFSET_MULT As Double = 0.1
 Public Const DIMENSION_TEXT_SIZE_MULT As Double = 0.5
 Public Const DIMENSION_SHAPES_COLOR As String = "CMYK,USER,0,0,0,100"
-Public Const DIMENSIONS_NAME As String = "рама с размерами"
+Public Const DIMENSIONS_NAME As String = "СЂР°РјР° СЃ СЂР°Р·РјРµСЂР°РјРё"
 
 Public Type Beams
     TopBeam As Shape
@@ -85,7 +87,7 @@ End Type
 ' # Entry points
 
 Sub Part1__PrepareSelected()
-    #If DebugMode = 0 Then
+    #If DEV = 0 Then
     On Error GoTo Catch
     #End If
     
@@ -106,12 +108,12 @@ Sub Part1__PrepareSelected()
     If Not ShowPreparationsView(Cfg) Then GoTo Finally
         
     Shapes.CreateDocumentFrom.Activate
-    BoostStart "Подготовка лицевой части"
+    BoostStart "РџРѕРґРіРѕС‚РѕРІРєР° Р»РёС†РµРІРѕР№ С‡Р°СЃС‚Рё"
     ProcessFaceDoc
     BoostFinish
     
     Shapes.CreateDocumentFrom.Activate
-    BoostStart "Подготовка задника"
+    BoostStart "РџРѕРґРіРѕС‚РѕРІРєР° Р·Р°РґРЅРёРєР°"
     With New BackDoc
         .BeamEdgeOffset = Cfg("BeamEdgeOffset")
         .ProcessBackDoc
@@ -131,7 +133,7 @@ End Sub
 
 Sub Part2__MakeHoles()
 
-    #If DebugMode = 0 Then
+    #If DEV = 0 Then
     On Error GoTo Catch
     #End If
     
@@ -144,17 +146,17 @@ Sub Part2__MakeHoles()
     End With
     
     Dim Beams As Beams: Beams = FindBeams(Shapes)
-    If Not Beams.Some Then Log.Add "Не найдены верняя и/или нижняя части рамы"
+    If Not Beams.Some Then Log.Add "РќРµ РЅР°Р№РґРµРЅС‹ РІРµСЂРЅСЏСЏ Рё/РёР»Рё РЅРёР¶РЅСЏСЏ С‡Р°СЃС‚Рё СЂР°РјС‹"
     Dim ShapesForHoles As ShapeRange: Set ShapesForHoles = _
         FindShapesByName(Shapes, BACK_CONTOUR_INT_NAME)
     Set ShapesForHoles = FindShapesNotInside(ShapesForHoles)
-    If ShapesForHoles.Count = 0 Then Log.Add "Не найдено элементов для отверстий"
+    If ShapesForHoles.Count = 0 Then Log.Add "РќРµ РЅР°Р№РґРµРЅРѕ СЌР»РµРјРµРЅС‚РѕРІ РґР»СЏ РѕС‚РІРµСЂСЃС‚РёР№"
     If Log.Count > 0 Then GoTo Finally
     
     Dim Cfg As Dictionary
     If Not ShowHolesView(Cfg) Then GoTo Finally
     
-    BoostStart "Отверстия и вертикальные перемычки"
+    BoostStart "РћС‚РІРµСЂСЃС‚РёСЏ Рё РІРµСЂС‚РёРєР°Р»СЊРЅС‹Рµ РїРµСЂРµРјС‹С‡РєРё"
     
     MakeHoles ShapesForHoles, Beams, Cfg, Log
     
@@ -171,7 +173,7 @@ End Sub
 
 Sub Part3__Finalize()
 
-    #If DebugMode = 0 Then
+    #If DEV = 0 Then
     On Error GoTo Catch
     #End If
     
@@ -199,7 +201,7 @@ Sub Part3__Finalize()
         
     If IntPunches.Count = 0 _
    And ExtPunches.Count = 0 Then
-        Log.Add "Нет элементов для вырезания"
+        Log.Add "РќРµС‚ СЌР»РµРјРµРЅС‚РѕРІ РґР»СЏ РІС‹СЂРµР·Р°РЅРёСЏ"
     End If
     
     Dim IntShapes As ShapeRange: Set IntShapes = _
@@ -209,13 +211,13 @@ Sub Part3__Finalize()
         
     If IntShapes.Count = 0 _
    And ExtShapes.Count = 0 Then
-        Log.Add "Не найдено элементов (букв), в которых должно осуществиться вырезание"
+        Log.Add "РќРµ РЅР°Р№РґРµРЅРѕ СЌР»РµРјРµРЅС‚РѕРІ (Р±СѓРєРІ), РІ РєРѕС‚РѕСЂС‹С… РґРѕР»Р¶РЅРѕ РѕСЃСѓС‰РµСЃС‚РІРёС‚СЊСЃСЏ РІС‹СЂРµР·Р°РЅРёРµ"
     End If
     
     If Log.Count > 0 Then GoTo Finally
         
     Dim BackDoc As Document: Set BackDoc = ActiveDocument
-    BoostStart "Вырезание"
+    BoostStart "Р’С‹СЂРµР·Р°РЅРёРµ"
     
     Dim BottomHolesDup As ShapeRange: Set BottomHolesDup = BottomHoles.Duplicate
     
@@ -241,7 +243,7 @@ Sub Part3__Finalize()
     DimensionsDoc.Name = DIMENSIONS_NAME
     
     DimensionsDoc.Activate
-    BoostStart "Расстановка размеров"
+    BoostStart "Р Р°СЃСЃС‚Р°РЅРѕРІРєР° СЂР°Р·РјРµСЂРѕРІ"
     
     With New DimensionsMaker
         .MakeDimensions
@@ -282,7 +284,7 @@ Private Function CheckShapesHasCurves( _
     Dim Shape As Shape
     For Each Shape In Shapes
         If Not HasCurve(Shape) Then
-            Log.Add "Объект не в кривых", Shape
+            Log.Add "РћР±СЉРµРєС‚ РЅРµ РІ РєСЂРёРІС‹С…", Shape
             CheckShapesHasCurves = False
         End If
     Next Shape
@@ -296,8 +298,32 @@ Private Sub ProcessFaceDoc()
         SetOutlineColor ActivePage.Shapes.All, CreateColor(FACE_COLOR)
         ActivePage.Shapes.All.Flip cdrFlipHorizontal
         .Name = FACE_NAME
+        MakeCirclesOnFaceShapes ActivePage.Shapes.All
+        .ClearSelection
     End With
 End Sub
+
+Public Sub MakeCirclesOnFaceShapes(ByVal Shapes As ShapeRange)
+    Dim Shape As Shape
+    For Each Shape In Shapes
+        MakeCirclesOnConcaveNodes Shape.Curve.Nodes.All
+    Next Shape
+End Sub
+
+Private Function MakeCirclesOnConcaveNodes(ByVal Nodes As NodeRange) As ShapeRange
+    Dim Node As Node
+    For Each Node In Nodes
+        MakeCircleOnConcaveNode Node
+    Next Node
+End Function
+
+Private Function MakeCircleOnConcaveNode(ByVal Node As Node) As Shape
+    If IsNodeConvex(Node) Then Exit Function
+    
+    Set MakeCircleOnConcaveNode = _
+        MakeCircle(Node.PositionX, Node.PositionY, FACE_HOLE_SIZE / 2, , Black)
+    
+End Function
 
 '-------------------------------------------------------------------------------
 
@@ -400,18 +426,18 @@ Public Property Get FindBeams(ByVal Shapes As ShapeRange) As Beams
     End With
 End Property
 
-Public Function MakeCircle( _
+Public Function MakeCircleAtPoint( _
                     ByVal Center As Point, _
                     ByVal Radius As Double, _
                     Optional ByVal FillColor As Color, _
                     Optional ByVal OutlineColor As Color, _
                     Optional ByVal Name As String _
                 ) As Shape
-    Set MakeCircle = _
+    Set MakeCircleAtPoint = _
         ActiveLayer.CreateEllipse2(Center.x, Center.y, Radius)
-    If IsSome(FillColor) Then MakeCircle.Fill.ApplyUniformFill FillColor
-    If IsSome(OutlineColor) Then MakeCircle.Outline.Color.CopyAssign OutlineColor
-    If Not Name = vbNullString Then MakeCircle.Name = Name
+    If IsSome(FillColor) Then MakeCircleAtPoint.Fill.ApplyUniformFill FillColor
+    If IsSome(OutlineColor) Then MakeCircleAtPoint.Outline.Color.CopyAssign OutlineColor
+    If Not Name = vbNullString Then MakeCircleAtPoint.Name = Name
 End Function
 
 Public Function MakePunch( _
@@ -426,7 +452,7 @@ Public Function MakePunch( _
     With MakePunch
         With .Rectangle
             .CornerType = cdrCornerTypeRound
-            '.SetRoundness 100 не работает, поэтому так
+            '.SetRoundness 100 РЅРµ СЂР°Р±РѕС‚Р°РµС‚, РїРѕСЌС‚РѕРјСѓ С‚Р°Рє
             .CornerLowerLeft = 100
             .CornerLowerRight = 100
             .CornerUpperLeft = 100
@@ -440,11 +466,11 @@ Public Function MakePunch( _
     If Not Name = vbNullString Then MakePunch.Name = Name
 End Function
 
-'поиск ближайшей окружности внутри Shape
-'с центром внутри Beam (не ближе BeamEdgeSpace от края),
-'с радиусом Radius, с шагом Step
-'Step > 0 - вправо от StartingPoint
-'Step < 0 - влево
+'РїРѕРёСЃРє Р±Р»РёР¶Р°Р№С€РµР№ РѕРєСЂСѓР¶РЅРѕСЃС‚Рё РІРЅСѓС‚СЂРё Shape
+'СЃ С†РµРЅС‚СЂРѕРј РІРЅСѓС‚СЂРё Beam (РЅРµ Р±Р»РёР¶Рµ BeamEdgeSpace РѕС‚ РєСЂР°СЏ),
+'СЃ СЂР°РґРёСѓСЃРѕРј Radius, СЃ С€Р°РіРѕРј Step
+'Step > 0 - РІРїСЂР°РІРѕ РѕС‚ StartingPoint
+'Step < 0 - РІР»РµРІРѕ
 Public Property Get NextValidPoint( _
                         ByVal Beam As Shape, _
                         ByVal Shape As Shape, _
@@ -494,6 +520,19 @@ Public Property Get ProbeHits( _
     Next Angle
 End Property
 
+Public Property Get IsNodeConvex(ByVal Node As Node) As Boolean
+    Const MaxHits As Long = PROBE_STEPS
+    Dim Hits As Long
+    Hits = _
+        ProbeHits( _
+            Node.Parent, _
+            Point.New_(Node.PositionX, Node.PositionY), _
+            PROBE_RADIUS, _
+            MaxHits _
+        )
+    If Hits < MaxHits * CONCAVITY_MULT Then IsNodeConvex = True
+End Property
+
 Public Sub ApplyBeamCommonProps(ByVal Beam As Shape)
     Beam.Fill.ApplyNoFill
 End Sub
@@ -505,11 +544,11 @@ End Function
 '===============================================================================
 ' # Tests
 
-Private Sub testDividend()
+Private Sub TestDividend()
     Show ClosestDividend(671, 10) '670
 End Sub
 
-Private Sub testSnapPoints()
+Private Sub TestSnapPoints()
     With ActivePage.Shapes.First
         Dim Index As Long
         Dim Point As SnapPoint
@@ -519,4 +558,16 @@ Private Sub testSnapPoints()
                 Point.PositionX, Point.PositionY, Index
         Next Point
     End With
+End Sub
+
+Private Sub TestFace()
+       
+    Dim Shapes As ShapeRange
+    With InputData.RequestDocumentOrPage
+        If .IsError Then Exit Sub
+        Set Shapes = .Shapes
+    End With
+        
+    Shapes.CreateDocumentFrom.Activate
+    ProcessFaceDoc
 End Sub

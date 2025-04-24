@@ -118,7 +118,7 @@ Private Function MakeBeam( _
     MakeBeam.Name = HORIZONTAL_BEAM_NAME
 End Function
 
-'шейпы, которые не находятся целиком внутри крайних координат других по оси X
+'С€РµР№РїС‹, РєРѕС‚РѕСЂС‹Рµ РЅРµ РЅР°С…РѕРґСЏС‚СЃСЏ С†РµР»РёРєРѕРј РІРЅСѓС‚СЂРё РєСЂР°Р№РЅРёС… РєРѕРѕСЂРґРёРЅР°С‚ РґСЂСѓРіРёС… РїРѕ РѕСЃРё X
 Private Property Get FindShapesNotInBounds( _
                          ByVal Shapes As ShapeRange _
                      ) As ShapeRange

@@ -8,12 +8,12 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = True
 '===============================================================================
-'   Модуль          : Point
-'   Версия          : 2024.05.31
-'   Автор           : elvin-nsk (me@elvin.nsk.ru)
-'   Сайт            : https://github.com/elvin-nsk/LowCoupledFromCore
-'   Назначение      : Хранит координаты точки
-'   Зависимости     : Нет
+'   РњРѕРґСѓР»СЊ          : Point
+'   Р’РµСЂСЃРёСЏ          : 2024.05.31
+'   РђРІС‚РѕСЂ           : elvin-nsk (me@elvin.nsk.ru)
+'   РЎР°Р№С‚            : https://github.com/elvin-nsk/LowCoupledFromCore
+'   РќР°Р·РЅР°С‡РµРЅРёРµ      : РҐСЂР°РЅРёС‚ РєРѕРѕСЂРґРёРЅР°С‚С‹ С‚РѕС‡РєРё
+'   Р—Р°РІРёСЃРёРјРѕСЃС‚Рё     : РќРµС‚
 '===============================================================================
 
 '@Interface

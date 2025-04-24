@@ -39,7 +39,7 @@ Private Sub MakeBottomPunch( _
                 x1 = x
                 x2 = x
             Else
-                'åñëè äàëåêî óáåæàë, òî çàêàí÷èâàåì
+                'ÐµÑÐ»Ð¸ Ð´Ð°Ð»ÐµÐºÐ¾ ÑƒÐ±ÐµÐ¶Ð°Ð», Ñ‚Ð¾ Ð·Ð°ÐºÐ°Ð½Ñ‡Ð¸Ð²Ð°ÐµÐ¼
                 If (x - x2) > BOTTOM_GROOVE_SIZE Then Exit For Else x2 = x
             End If
         End If

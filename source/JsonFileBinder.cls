@@ -8,12 +8,12 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = True
 '===============================================================================
-'   Модуль          : JsonFileBinder
-'   Версия          : 2024.06.20
-'   Автор           : elvin-nsk (me@elvin.nsk.ru)
-'   Сайт            : https://github.com/elvin-nsk/LowCoupledFromCore
-'   Назначение      : Хранит настройки в словаре в файле json
-'   Зависимости     : LibCore, JsonConverter
+'   РњРѕРґСѓР»СЊ          : JsonFileBinder
+'   Р’РµСЂСЃРёСЏ          : 2024.06.20
+'   РђРІС‚РѕСЂ           : elvin-nsk (me@elvin.nsk.ru)
+'   РЎР°Р№С‚            : https://github.com/elvin-nsk/LowCoupledFromCore
+'   РќР°Р·РЅР°С‡РµРЅРёРµ      : РҐСЂР°РЅРёС‚ РЅР°СЃС‚СЂРѕР№РєРё РІ СЃР»РѕРІР°СЂРµ РІ С„Р°Р№Р»Рµ json
+'   Р—Р°РІРёСЃРёРјРѕСЃС‚Рё     : LibCore, JsonConverter
 '===============================================================================
 
 '@PredeclaredId

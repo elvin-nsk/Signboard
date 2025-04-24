@@ -8,13 +8,13 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = True
 '===============================================================================
-'   Модуль          : FormToDictionaryBinder
-'   Версия          : 2024.06.18
-'   Автор           : elvin-nsk (me@elvin.nsk.ru)
-'   Сайт            : https://github.com/elvin-nsk/LowCoupledFromCore
-'   Назначение      : Привязывает контролы формы к словарю
-'                     для автоматической загрузки/сохранения состояния
-'   Зависимости     : LibCore, JsonConverter
+'   РњРѕРґСѓР»СЊ          : FormToDictionaryBinder
+'   Р’РµСЂСЃРёСЏ          : 2024.06.18
+'   РђРІС‚РѕСЂ           : elvin-nsk (me@elvin.nsk.ru)
+'   РЎР°Р№С‚            : https://github.com/elvin-nsk/LowCoupledFromCore
+'   РќР°Р·РЅР°С‡РµРЅРёРµ      : РџСЂРёРІСЏР·С‹РІР°РµС‚ РєРѕРЅС‚СЂРѕР»С‹ С„РѕСЂРјС‹ Рє СЃР»РѕРІР°СЂСЋ
+'                     РґР»СЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕР№ Р·Р°РіСЂСѓР·РєРё/СЃРѕС…СЂР°РЅРµРЅРёСЏ СЃРѕСЃС‚РѕСЏРЅРёСЏ
+'   Р—Р°РІРёСЃРёРјРѕСЃС‚Рё     : LibCore, JsonConverter
 '===============================================================================
 
 '@Interface

@@ -78,7 +78,7 @@ End Property
 
 Private Sub TryMakeBottomCircle(ByVal Center As Point)
     If Center Is Nothing Then Exit Sub
-    MakeCircle _
+    MakeCircleAtPoint _
         Center, BOTTOM_HOLE_SIZE / 2, _
         OutlineColor:=CreateColor(BOTTOM_HOLE_COLOR), _
         Name:=BOTTOM_HOLE_NAME

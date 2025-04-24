@@ -67,19 +67,6 @@ Private Property Get AngleOutside(ByVal Node As Node) As Double
     End With
 End Property
 
-Private Property Get IsNodeConvex(ByVal Node As Node) As Boolean
-    Const MaxHits As Long = PROBE_STEPS
-    Dim Hits As Long
-    Hits = _
-        ProbeHits( _
-            Node.Parent, _
-            Point.New_(Node.PositionX, Node.PositionY), _
-            PROBE_RADIUS, _
-            MaxHits _
-        )
-    If Hits < MaxHits * CONCAVITY_MULT Then IsNodeConvex = True
-End Property
-
 Private Sub MakeVectors(ByVal Node As Node)
     Dim n As NodeData: Set n = NodeData.New_(Node)
     With Probe(n.Position, 120, GROOVE_PUNCH_LENGTH)

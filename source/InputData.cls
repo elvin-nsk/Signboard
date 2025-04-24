@@ -7,19 +7,19 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-Attribute VB_Description = "Получение исходного пользовательского выбора."
-'@ModuleDescription("Получение исходного пользовательского выбора.")
+Attribute VB_Description = "РџРѕР»СѓС‡РµРЅРёРµ РёСЃС…РѕРґРЅРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРѕРіРѕ РІС‹Р±РѕСЂР°."
+'@ModuleDescription("РџРѕР»СѓС‡РµРЅРёРµ РёСЃС…РѕРґРЅРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРѕРіРѕ РІС‹Р±РѕСЂР°.")
 
 '@PredeclaredId
 Option Explicit
 
 '===============================================================================
 
-Private Const DefaultErrNoDocument As String = "Нет активного документа."
+Private Const DefaultErrNoDocument As String = "РќРµС‚ Р°РєС‚РёРІРЅРѕРіРѕ РґРѕРєСѓРјРµРЅС‚Р°."
 Private Const DefaultErrLayerDisabled As String = _
-    "Текущий слой закрыт."
-Private Const DefaultErrNoSelection As String = "Выделите объекты."
-Private Const DefaultErrPageEmpty As String = "Страница пустая."
+    "РўРµРєСѓС‰РёР№ СЃР»РѕР№ Р·Р°РєСЂС‹С‚."
+Private Const DefaultErrNoSelection As String = "Р’С‹РґРµР»РёС‚Рµ РѕР±СЉРµРєС‚С‹."
+Private Const DefaultErrPageEmpty As String = "РЎС‚СЂР°РЅРёС†Р° РїСѓСЃС‚Р°СЏ."
 
 Private Type typeThis
     Document As Document

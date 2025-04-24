@@ -50,7 +50,7 @@ Private Sub MakeTopHolesInShape( _
 End Sub
 
 Private Sub MakeTopCircle(ByVal Center As Point)
-    MakeCircle _
+    MakeCircleAtPoint _
         Center, TOP_HOLE_SIZE / 2, _
         OutlineColor:=CreateColor(TOP_HOLE_COLOR), _
         Name:=TOP_HOLE_NAME

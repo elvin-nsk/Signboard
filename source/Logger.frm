@@ -15,10 +15,10 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 
 '===============================================================================
-' Форма            : Logger
-' Версия           : 2022.01.15
-' Автор            : elvin-nsk (me@elvin.nsk.ru)
-' Назначение:      : ведение лога событий и ошибок
+' Р¤РѕСЂРјР°            : Logger
+' Р’РµСЂСЃРёСЏ           : 2022.01.15
+' РђРІС‚РѕСЂ            : elvin-nsk (me@elvin.nsk.ru)
+' РќР°Р·РЅР°С‡РµРЅРёРµ:      : РІРµРґРµРЅРёРµ Р»РѕРіР° СЃРѕР±С‹С‚РёР№ Рё РѕС€РёР±РѕРє
 '===============================================================================
 
 Option Explicit
@@ -38,7 +38,7 @@ Private This As typeThis
 
 '===============================================================================
 
-'добавить сообщение в лог, с опциональной привязкой к объекту
+'РґРѕР±Р°РІРёС‚СЊ СЃРѕРѕР±С‰РµРЅРёРµ РІ Р»РѕРі, СЃ РѕРїС†РёРѕРЅР°Р»СЊРЅРѕР№ РїСЂРёРІСЏР·РєРѕР№ Рє РѕР±СЉРµРєС‚Сѓ
 Public Sub Add(ByVal Text As String, Optional ConnectedObject As Object)
   This.MessagesCount = This.MessagesCount + 1
   ReDim Preserve This.Messages(1 To This.MessagesCount)
@@ -58,8 +58,8 @@ Public Property Get Count()
   Count = This.MessagesCount
 End Property
 
-'вывести лог, если он не пуст
-Public Sub Check(Optional ByVal ListCaption As String = "Лог")
+'РІС‹РІРµСЃС‚Рё Р»РѕРі, РµСЃР»Рё РѕРЅ РЅРµ РїСѓСЃС‚
+Public Sub Check(Optional ByVal ListCaption As String = "Р›РѕРі")
   If This.MessagesCount = 0 Then Exit Sub
   Caption = ListCaption
   Show vbModeless
@@ -88,7 +88,7 @@ Private Sub lstMain_Change()
 End Sub
 
 Private Sub lstMain_KeyPress(ByVal KeyAscii As MSForms.ReturnInteger)
-  If KeyAscii = 13 Then Focus 'если Enter
+  If KeyAscii = 13 Then Focus 'РµСЃР»Рё Enter
 End Sub
 
 Private Sub lstMain_DblClick(ByVal Cancel As MSForms.ReturnBoolean)
@@ -113,7 +113,7 @@ End Sub
 
 '===============================================================================
 
-'фокусируется на привязанном к ошибке объекте
+'С„РѕРєСѓСЃРёСЂСѓРµС‚СЃСЏ РЅР° РїСЂРёРІСЏР·Р°РЅРЅРѕРј Рє РѕС€РёР±РєРµ РѕР±СЉРµРєС‚Рµ
 Private Sub Focus()
   With This.Messages(ActiveMessageNum)
     If .Object Is Nothing Then Exit Sub
@@ -213,9 +213,9 @@ Private Sub GuardRangeLng(TextBox As MSForms.TextBox, _
   End With
 End Sub
 
-Private Sub UserForm_QueryClose(Сancel As Integer, CloseMode As Integer)
+Private Sub UserForm_QueryClose(РЎancel As Integer, CloseMode As Integer)
   If CloseMode = VbQueryClose.vbFormControlMenu Then
-    Сancel = True
+    РЎancel = True
     FormCancel
   End If
 End Sub

@@ -26,7 +26,7 @@ Private BeamEdgeOffsetHandler As TextBoxHandler
 ' # Constructor
 
 Private Sub UserForm_Initialize()
-    Caption = "œÓ‰„ÓÚÓ‚Í‡ - " & APP_DISPLAYNAME & " (v" & APP_VERSION & ")"
+    Caption = "–ü–æ–¥–≥–æ—Ç–æ–≤–∫–∞ - " & APP_DISPLAYNAME & " (v" & APP_VERSION & ")"
     btnOk.Default = True
 End Sub
 
@@ -39,7 +39,7 @@ Private Sub UserForm_Activate()
 End Sub
 
 Private Sub btnOk_Click()
-    FormŒ 
+    Form–û–ö
 End Sub
 
 Private Sub btnCancel_Click()
@@ -49,7 +49,7 @@ End Sub
 '===============================================================================
 ' # Logic
 
-Private Sub FormŒ ()
+Private Sub Form–û–ö()
     Hide
     IsOk = True
 End Sub
@@ -67,9 +67,9 @@ End Sub
 '===============================================================================
 ' # Boilerplate
 
-Private Sub UserForm_QueryClose(—ancel As Integer, CloseMode As Integer)
+Private Sub UserForm_QueryClose(–°ancel As Integer, CloseMode As Integer)
     If CloseMode = VbQueryClose.vbFormControlMenu Then
-        —ancel = True
+        –°ancel = True
         FormCancel
     End If
 End Sub
