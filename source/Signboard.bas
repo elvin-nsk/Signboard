@@ -1,7 +1,7 @@
 Attribute VB_Name = "Signboard"
 '===============================================================================
 '   Макрос          : Signboard
-'   Версия          : 2025.04.24
+'   Версия          : 2025.05.06
 '   Сайты           : https://vk.com/elvin_macro
 '                     https://github.com/elvin-nsk
 '   Автор           : elvin-nsk (me@elvin.nsk.ru)
@@ -14,12 +14,13 @@ Option Explicit
 
 Public Const APP_NAME As String = "Signboard"
 Public Const APP_DISPLAYNAME As String = APP_NAME
-Public Const APP_VERSION As String = "2025.04.24"
+Public Const APP_VERSION As String = "2025.05.06"
 
 '===============================================================================
 ' # Globals
 
 Public Const QUANTIZATION_STEP As Double = 10
+Public Const SOURCE_NAME As String = "ИСХОДНЫЙ"
 
 Public Const GROOVE_SIZE As Double = 3.2
 Public Const GROOVE_PUNCH_LENGTH As Double = GROOVE_SIZE * 4
@@ -47,7 +48,7 @@ Public Const HORIZONTAL_BEAM_NAME As String = "H_BEAM"
 Public Const VERTICAL_BEAM_STEP As Double = 1000
 Public Const HOLES_DICTIONARY_NAME As String = "Holes"
 
-Public Const BOTTOM_GROOVE_SIZE As Double = 6
+Public Const BOTTOM_GROOVE_SIZE As Double = 3.2
 Public Const BOTTOM_GROOVE_PUNCH_LENGTH As Double = BOTTOM_GROOVE_SIZE * 3
 Public Const BOTTOM_GROOVE_STEP As Double = BOTTOM_GROOVE_SIZE / 3
 Public Const BOTTOM_GROOVE_COLOR As String = GROOVE_COLOR

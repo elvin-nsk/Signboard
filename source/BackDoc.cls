@@ -22,15 +22,17 @@ Public Sub ProcessBackDoc()
         .Unit = cdrMillimeter
         Dim Source As Shape: Set Source = ActivePage.Shapes.All.Group
         ResizePageToShapes SideAdd:=AverageDim(Source) / 10
-        Source.Fill.ApplyNoFill
+        Source.Name = SOURCE_NAME
         
         Dim ContourInt As Shape: Set ContourInt = _
             MakeContour(Source, -BACK_CONTOUR_INT)
         ContourInt.Outline.Color = CreateColor(BACK_COLOR)
+        ContourInt.Fill.ApplyNoFill
         
         Dim ContourExt As Shape: Set ContourExt = _
             MakeContour(Source, BACK_CONTOUR_EXT)
         ContourExt.Outline.Color = CreateColor(BACK_COLOR)
+        ContourExt.Fill.ApplyNoFill
                        
         Dim IntShapes As ShapeRange: Set IntShapes = ContourInt.UngroupAllEx
         NameShapes IntShapes, BACK_CONTOUR_INT_NAME
@@ -51,7 +53,7 @@ Public Sub ProcessBackDoc()
         MakeBeams FindShapesNotInBounds(IntShapes)
         
         .Name = BACK_NAME
-        Source.Delete
+        Source.OrderToBack
     End With
 End Sub
 
